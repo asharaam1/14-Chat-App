@@ -4,9 +4,11 @@ import './index.css'
 import '@fontsource/roboto/400.css';
 import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom';
+import Navbar from './components/Navbar'
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
-    <App/>
+    <Navbar />
+    <App />
   </BrowserRouter>,
 )
