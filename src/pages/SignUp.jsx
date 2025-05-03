@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Box } from '@mui/material';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from '../firbaseconfig';
+import { auth, db } from '../firbaseconfig';
 import Swal from 'sweetalert2';
+import { addDoc, collection } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('');
-
+    const navigate = useNavigate();
 
 
     const handleSignUp = async (e) => {
         e.preventDefault();
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password, name)
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+            const user = userCredential.user
+
+            await addDoc(collection(db, "users"), {
+                uid: auth.currentUser.uid,
+                name: name,
+                email: email,
+                createdAt: new Date()
+            });
+
             setName('');
             setEmail('');
             setPassword('');
@@ -25,7 +36,8 @@ const SignUp = () => {
                 icon: "success",
                 draggable: true
             });
-            
+            navigate('/login')
+
         } catch (error) {
             const errorCode = error.code;
             const errorMessage = error.message;
