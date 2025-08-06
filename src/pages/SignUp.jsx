@@ -1,34 +1,46 @@
 import React, { useState } from 'react';
 import { TextField, Button, Container, Typography, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from '../firbaseconfig';
-import Swal from 'sweetalert2';
 import { addDoc, collection } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import CloudinaryUpload from '../hooks/uploadImage'; // ✅ Importing reusable upload component
+
 
 const SignUp = () => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('');
+    // const [name, setName] = useState('');
+    // const [email, setEmail] = useState('')
+    // const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        profileImage: '',
+    });
+
     const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
 
     const handleSignUp = async (e) => {
         e.preventDefault();
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
             const user = userCredential.user
 
             await addDoc(collection(db, "users"), {
-                uid: auth.currentUser.uid,
-                name: name,
-                email: email,
+                uid: user.uid,
+                name: formData.name,
+                email: formData.email,
+                profileImage: formData.profileImage,
                 createdAt: new Date()
             });
 
-            setName('');
-            setEmail('');
-            setPassword('');
+            setFormData({ name: '', email: '', password: '', profileImage: '' });
 
             //! Sweet Alert 
             Swal.fire({
@@ -39,11 +51,12 @@ const SignUp = () => {
             navigate('/login')
 
         } catch (error) {
-            const errorCode = error.code;
-            const errorMessage = error.message;
+            // const errorCode = error.code;
+            // const errorMessage = error.message;
             Swal.fire({
                 icon: "error",
-                title: errorCode,
+                title: "SignUp Failed",
+                text: error.message || "An error occurred during signup"
             });
         }
     }
@@ -64,45 +77,76 @@ const SignUp = () => {
                     Sign Up
                 </Typography>
 
-                <TextField
-                    label="Full Name"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
+                <form onSubmit={handleSignUp}>
 
-                <TextField
-                    label="Email"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+                    <TextField
+                        label="Full Name"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        // type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                    />
 
-                <TextField
-                    label="Password"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                    <TextField
+                        label="Email"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        // type="email"
+                        name="email"
+                        value={formData.email}
+                        // onChange={(e) => setEmail(e.target.value)}
+                        onChange={handleChange}
+                    />
 
-                <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    sx={{ mt: 2 }}
-                    onClick={handleSignUp}
-                >
-                    Sign Up
-                </Button>
+                    <TextField
+                        label="Password"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        // type="password"
+                        name="password"
+                        value={formData.password}
+                        // onChange={(e) => setPassword(e.target.value)}
+                        onChange={handleChange}
+                    />
+
+                    <CloudinaryUpload
+                        setImageUrl={(url) => {
+                            console.log("Profile image URL set in form:", url);
+                            setFormData({ ...formData, profileImage: url });
+                        }}
+                    />
+                    
+                    {formData.profileImage && (
+                        <Box sx={{ mt: 2, mb: 2, textAlign: 'center' }}>
+                            <img 
+                                src={formData.profileImage} 
+                                alt="Profile Preview" 
+                                style={{ 
+                                    maxWidth: '150px', 
+                                    maxHeight: '150px',
+                                    borderRadius: '50%',
+                                    objectFit: 'cover'
+                                }} 
+                            />
+                        </Box>
+                    )}
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        type="submit"
+                    // onClick={handleSignUp}
+                    >
+                        Sign Up
+                    </Button>
+                </form>
             </Box>
         </Container>
     );
